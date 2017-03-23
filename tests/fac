@@ -1,0 +1,7 @@
+read n
+res == 1
+while n != 0 begin
+    res ==  res * n
+    n ==  n - 1  
+end
+write res

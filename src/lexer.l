@@ -4,6 +4,7 @@
     #include <stdexcept>
     #include <vector>
     #include <sstream>
+    #include <cstdlib>
     #include <memory>
 
     using namespace std;
@@ -219,7 +220,7 @@
     {
     public:
         number_token(const std::string& number, size_t line, size_t begin, size_t end)
-            : number_(stod(number))
+            : number_(strtod(number.c_str(), nullptr))
             , token(line, begin, end)
         {
         }
@@ -261,18 +262,53 @@
         string identifier_;
     };
 
-    class colon_token : public token
+    class delimiter_token : public token
     {
     public:
-        colon_token(size_t line, size_t begin, size_t end)
-            : token(line, begin, end)
+        delimiter_token(const string& delimiter, size_t line, size_t begin, size_t end)
+            : delimiter_(to_DELIM(delimiter))
+            , token(line, begin, end)
         {
+        }
+
+        enum class DELIM
+        {
+            DELIM_SEMICOLON,
+            DELIM_LEFT_BRACKET,
+            DELIM_RIGHT_BRACKET
+        };
+
+        DELIM delimiter()
+        {
+            return delimiter_;
         }
 
         virtual void print(ostream& os) const override
         {
-            os << "Colon(" << line() << ", " << begin() << ", " << end() << "); ";
+            os << to_string(delimiter_) << "(" << line() << ", " << begin() << ", " << end() << "); ";
         }
+
+    private:
+        string to_string(DELIM delimiter) const
+        {
+            switch (delimiter)
+            {
+                case DELIM::DELIM_SEMICOLON: return "Semicolon";
+                case DELIM::DELIM_LEFT_BRACKET: return "LeftBracket";
+                case DELIM::DELIM_RIGHT_BRACKET: return "RightBracket";
+            }
+        }
+
+        DELIM to_DELIM(const std::string& name) const
+        {
+            if (name == ";") return DELIM::DELIM_SEMICOLON;
+            else if (name == "(") return DELIM::DELIM_LEFT_BRACKET;
+            else if (name == ")") return DELIM::DELIM_RIGHT_BRACKET;
+            INVALID_ARGUMENT("to_DELIM invalid argument = " << name);
+        }
+
+    private:
+        DELIM delimiter_;
     };
 
     class comment_token : public token
@@ -389,7 +425,7 @@ NUMBER      \-?(({DB}{D}*\.{D}+{R}|0\.{D}+{R}|\.{D}+{R})|({DB}{D}*{R})|0)
 SPACE       [ ]
 NEW_LINE    \n
 TAB         \t
-COLON       [\(|\)|;]
+DELIMITER   [\(|\)|;]
 COMMENT     \/\/.*$
 ERROR       .
 
@@ -432,8 +468,8 @@ ERROR       .
     pos += yyleng;
 }
 
-{COLON} {
-    _tokens.push_back(make_shared<colon_token>(lineno, pos, pos + yyleng - 1));
+{DELIMITER} {
+    _tokens.push_back(make_shared<delimiter_token>(yytext, lineno, pos, pos + yyleng - 1));
     pos += yyleng;
 }
 

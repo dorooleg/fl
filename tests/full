@@ -5,3 +5,5 @@ if then else while do read write begin end
 variable 
 _var
 v123b
+true
+false

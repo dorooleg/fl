@@ -1,7 +1,7 @@
 # Lexer
 Зависимости:
-sudo apt-get install clang
-sudo apt-get install flex
+- sudo apt-get install clang
+- sudo apt-get install flex
 
 Собрать проект:
 make
@@ -13,5 +13,5 @@ make clean
 tests/test.sh
 
 Запуск lexer:
-./lexer.sh path_to_file
+./lexer [-filter] path_to_file
 

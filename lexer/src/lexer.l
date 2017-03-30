@@ -6,8 +6,11 @@
     #include <sstream>
     #include <cstdlib>
     #include <memory>
+    #include <stack>
 
     using namespace std;
+
+    void multiline_comment();
 
     #define INVALID_ARGUMENT(s) \
     { \
@@ -18,6 +21,9 @@
 
     int pos = 0;
     int lineno = 0;
+    bool comment_filter = false;
+    class token;
+    bool satisfy_comment_filter(const shared_ptr<token>& token); 
 
     class printer
     {
@@ -160,7 +166,8 @@
             OP_LT,
             OP_LTE,
             OP_AND,
-            OP_OR
+            OP_OR,
+            OP_POW
         };
 
         OP type() const
@@ -191,6 +198,7 @@
                 case OP::OP_LTE: return "LTE";
                 case OP::OP_AND: return "AND";
                 case OP::OP_OR: return "OR";
+                case OP::OP_POW: return "POW";
             }
         }
 
@@ -209,6 +217,7 @@
             else if (name == "<=") return OP::OP_LTE;
             else if (name == "&&") return OP::OP_AND;
             else if (name == "||") return OP::OP_OR;
+            else if (name == "**") return OP::OP_POW;
             INVALID_ARGUMENT("to_OP invalid argument = " << name);
         }
 
@@ -334,12 +343,38 @@
         string comment_;
     };
 
+    class multiline_comment_token : public token
+    {
+    public:
+        multiline_comment_token(const std::string& comment, size_t line_begin, size_t line_end, size_t begin, size_t end)
+            : comment_(comment)
+            , line_end_(line_end)
+            , token(line_begin, begin, end)
+        {
+        }
+
+        string comment() const
+        {
+            return comment_;
+        }
+
+        virtual void print(ostream& os) const override
+        {
+            os << "MultilineComment(" << comment() << ", " << line() << ", " << begin() << ", " << line_end_ << ", " << end() << "); ";
+        }
+
+    private:
+        string comment_;
+        size_t line_end_;
+    };
+
     class error_token : public token
     {
     public:
-        error_token(const std::string& error, size_t line, size_t begin, size_t end)
+        error_token(const std::string& error, size_t line_begin, size_t line_end, size_t begin, size_t end)
             : error_(error)
-            , token(line, begin, end)
+            , line_end_(line_end)
+            , token(line_begin, begin, end)
         {
         }
 
@@ -350,11 +385,12 @@
 
         virtual void print(ostream& os) const override
         {
-            os << "Error(" << error() << ", " << line() << ", " << begin() << ", " << end() << "); ";
+            os << "Error(" << error() << ", " << line() << ", " << begin() << ", " << line_end_ << ", " << end() << "); ";
         }
 
     private:
         string error_;
+        size_t line_end_;
     };
 
     class bool_token : public token
@@ -403,19 +439,40 @@
         BOOL type_;
     };
 
+    class assignment_token : public token
+    {
+    public:
+        assignment_token(const std::string& name, size_t line, size_t begin, size_t end)
+            : name_(name)
+            , token(line, begin, end)
+        {
+        }
+
+        virtual void print(ostream& os) const override
+        {
+            os << "Assignment(" << line() << ", " << begin() << ", " << end() << "); ";
+        }
+
+    private:
+        string name_;
+    };
+
     vector<shared_ptr<token>> _tokens;
 
     void print_tokens()
     {
         for (const auto& token : _tokens)
         {
-            cout << *token;
+            if (!satisfy_comment_filter(token))
+            {
+                cout << *token;
+            }
         }
     }
 %}
 
 KW          "if"|"then"|"else"|"while"|"do"|"read"|"write"|"begin"|"end"
-OP          \+|-|\*|\/|%|==|!=|>|>=|<|<=|&&|\|\|
+OP          \+|-|\*|\/|%|==|!=|>|>=|<|<=|&&|\|\||\*\*
 BOOL        "true"|"false"
 IDENT       [\_a-zA-Z][\_a-zA-Z0-9]*
 D           [0-9]
@@ -427,6 +484,8 @@ NEW_LINE    \n
 TAB         \t
 DELIMITER   [\(|\)|;]
 COMMENT     \/\/.*$
+ASSIGNMENT  :=
+MULTILINE_COMMENT \(\*
 ERROR       .
 
 %%
@@ -479,16 +538,93 @@ ERROR       .
     pos = 0;
 }
 
+{MULTILINE_COMMENT} {
+    multiline_comment();
+}
+
+{ASSIGNMENT} {
+    _tokens.push_back(make_shared<assignment_token>(yytext, lineno, pos, pos + yyleng - 1));
+    pos += yyleng;
+}
+
 {ERROR} {
-    _tokens.push_back(make_shared<error_token>(yytext, lineno, pos, pos + yyleng - 1));
+    _tokens.push_back(make_shared<error_token>(yytext, lineno, lineno, pos, pos + yyleng - 1));
     print_tokens();
     exit(EXIT_FAILURE);
 }
 
 %%
 
-int main()
+static bool is_open_comment(char c1, char c2)
 {
+    return c1 == '(' && c2 == '*'; 
+}
+
+static bool is_close_comment(char c1, char c2)
+{
+    return c1 == '*' && c2 == ')'; 
+}
+
+void multiline_comment()
+{
+    int begin_line = lineno;
+    int begin_pos = pos;
+    pos += 2;
+    string comment("(*");
+    int balance = 1;
+    int c1 = 0;
+    int c2 = 0;
+    while (balance > 0)
+    {
+        c1 = c2;
+        c2 = yyinput();
+        if (c2 <= 0)
+        {
+            _tokens.push_back(make_shared<error_token>(comment, begin_line, lineno, begin_pos, pos));
+            print_tokens();
+            exit(EXIT_FAILURE);
+        }
+        comment.push_back(c2);
+        pos++;
+        if (c2 == '\n')
+        {
+            pos = 0;
+            lineno++;
+            continue;
+        }
+        balance += is_open_comment(c1, c2) - is_close_comment(c1, c2);
+    }
+    _tokens.push_back(make_shared<multiline_comment_token>(comment, begin_line, lineno, begin_pos, pos));
+}
+
+bool satisfy_comment_filter(const shared_ptr<token>& token)
+{
+    return comment_filter
+            && (dynamic_pointer_cast<comment_token>(token)
+            || dynamic_pointer_cast<multiline_comment_token>(token));
+}
+
+int main(int argc, char **argv)
+{
+    for (int i = 1; i < argc; i++)
+    {
+        if (!strcmp("-filter", argv[i]))
+        {
+            comment_filter = true;
+        }
+        else
+        {
+            freopen(argv[i], "r", stdin);
+        }
+    }
+
+    if ((argc == 3 && !comment_filter) || (argc == 2 && comment_filter))
+    {
+        std::cerr << "Invalid arguments" << std::endl;
+        return EXIT_FAILURE;
+    }
+
     yylex();
     print_tokens();
+    return EXIT_FAILURE;
 }

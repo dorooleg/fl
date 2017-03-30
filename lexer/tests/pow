@@ -1,0 +1,11 @@
+(* 
+    (*
+        (*
+            pow x ** d
+        *)
+    *)
+*)
+read x
+read d
+c := x ** d
+write c

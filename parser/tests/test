@@ -1,0 +1,10 @@
+x := 0;
+res := 1;
+read(x);
+while ( x > 1 )
+begin
+    res := res * x;
+    x := x - 1; 
+end
+
+write(x);

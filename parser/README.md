@@ -1,4 +1,4 @@
-# Lexer
+# Parser
 Зависимости:
 - sudo apt-get install clang
 - sudo apt-get install flex
@@ -9,9 +9,9 @@ make
 Очистить проект:
 make clean
 
-Запуск тестов:
-tests/test.sh
+Директория с тестами:
+tests
 
-Запуск lexer:
-./lexer [-filter] path_to_file
+Запуск parser:
+./parser path_to_file
 

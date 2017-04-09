@@ -1,10 +1,13 @@
 %{
+#include "parser.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <cstring>
-#include "parser.h"
+#include "error.h"
 #include <iostream>
+
+#define YYERROR_VERBOSE 1
 
 // prototypes
 nodeType *opr(int oper, int nops, ...);
@@ -14,7 +17,7 @@ void freeNode(nodeType *p);
 int ex(nodeType *p);
 int yylex(void);
 
-void yyerror(char *s);
+void yyerror(const char *s);
 int sym[26];                    // symbol table 
 %}
 
@@ -26,6 +29,7 @@ int sym[26];                    // symbol table
 
 %token <dValue> NUMBER
 %token <sIndex> IDENT
+%token EOF_
 %token IF THEN ELSE WHILE DO READ WRITE BEGIN_ END SKIP TRUE FALSE
 %nonassoc IFX
 %nonassoc ASSIGNMENT
@@ -44,31 +48,35 @@ int sym[26];                    // symbol table
 %nonassoc UMINUS
 
 %type <nPtr> stmt expr stmt_list
+%start program
 
 %%
 
+
 program:
-        function                { exit(0); }
+        function EOF_ { exit(0); }
         ;
 
 function:
-          function stmt         { ex($2); freeNode($2); }
-        | /* NULL */
+        | function SEMICOLON stmt { ex($3); freeNode($3); }
+        | stmt { ex($1); freeNode($1); }
         ;
 
 stmt:
-        WRITE LEFT_BRACKET expr RIGHT_BRACKET SEMICOLON   { $$ = opr(WRITE, 1, $3); }
-        | READ LEFT_BRACKET expr RIGHT_BRACKET SEMICOLON    { $$ = opr(READ, 1, $3); }
-        | IDENT ASSIGNMENT expr SEMICOLON                   { $$ = opr(ASSIGNMENT, 2, id($1), $3); }
-        | WHILE LEFT_BRACKET expr RIGHT_BRACKET stmt        { $$ = opr(WHILE, 2, $3, $5); }
+        expr { $$ = $1; }
+        | WRITE LEFT_BRACKET expr RIGHT_BRACKET { $$ = opr(WRITE, 1, $3); }
+        | READ LEFT_BRACKET expr RIGHT_BRACKET { $$ = opr(READ, 1, $3); }
+        | IDENT ASSIGNMENT expr { $$ = opr(ASSIGNMENT, 2, id($1), $3); }
+        | WHILE LEFT_BRACKET expr RIGHT_BRACKET DO stmt { $$ = opr(WHILE, 2, $3, $6); }
         | IF LEFT_BRACKET expr RIGHT_BRACKET THEN stmt %prec IFX { $$ = opr(IF, 2, $3, $6); }
         | IF LEFT_BRACKET expr RIGHT_BRACKET THEN stmt ELSE stmt { $$ = opr(IF, 3, $3, $6, $8); }
-        | BEGIN_ stmt_list END              { $$ = $2; }
+        | SKIP           { $$ = opr(SKIP, 0); }
+        | BEGIN_ stmt_list END { $$ = $2; }
         ;
 
 stmt_list:
-          stmt                  { $$ = $1; }
-        | stmt_list stmt        { $$ = opr(';', 2, $1, $2); }
+        stmt { $$ = $1; }
+        | stmt_list SEMICOLON stmt        { $$ = opr(';', 2, $1, $3); }
         ;
 
 expr:
@@ -89,7 +97,8 @@ expr:
         | expr OR expr          { $$ = opr(OR, 2, $1, $3); }
         | expr MOD expr          { $$ = opr(MOD, 2, $1, $3); }
         | expr POW expr          { $$ = opr(POW, 2, $1, $3); }
-        | SKIP          { $$ = opr(SKIP, 0); }
+        | TRUE { $$ = opr(TRUE, 0); }
+        | FALSE { $$ = opr(FALSE, 0);  }
         | LEFT_BRACKET expr RIGHT_BRACKET          { $$ = $2; }
         ;
 
@@ -154,6 +163,7 @@ void freeNode(nodeType *p) {
     free (p);
 }
 
-void yyerror(char *s) {
+void yyerror(const char *s) {
+    print_error(const_cast<char*>(s));
     fprintf(stdout, "%s\n", s);
 }

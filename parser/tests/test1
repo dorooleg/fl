@@ -1,0 +1,1 @@
+if (true) then skip else begin write(x); z := 13 end

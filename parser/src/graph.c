@@ -1,7 +1,3 @@
-/* source code courtesy of Frank Thomas Braun */
-
-/* calc3d.c: Generation of the graph of the syntax tree */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,8 +11,8 @@ int eps = 3; /* distance of graph lines */
 /* interface for drawing (can be replaced by "real" graphic using GD or other) */
 void graphInit (void);
 void graphFinish();
-void graphBox (char *s, int *w, int *h);
-void graphDrawBox (char *s, int c, int l);
+void graphBox (const char *s, int *w, int *h);
+void graphDrawBox (const char *s, int c, int l);
 void graphDrawArrow (int c1, int l1, int c2, int l2);
 
 /* recursive drawing of the syntax tree */
@@ -57,7 +53,7 @@ void exNode
     )
 {
     int w, h;           /* node width and height */
-    char *s;            /* node text */
+    const char *s;            /* node text */
     int cbar;           /* "real" start column of node (centred above subnodes) */
     int k;              /* child number */
     int che, chm;       /* end column and mid of children */
@@ -188,12 +184,12 @@ void graphFinish() {
     printf("\n");
 }
 
-void graphBox (char *s, int *w, int *h) {
+void graphBox (const char *s, int *w, int *h) {
     *w = strlen (s) + del;
     *h = 1;
 }
 
-void graphDrawBox (char *s, int c, int l) {
+void graphDrawBox (const char *s, int c, int l) {
     int i;
     graphTest (l, c+strlen(s)-1+del);
     for (i = 0; i < strlen (s); i++) {

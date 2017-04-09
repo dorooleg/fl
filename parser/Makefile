@@ -5,7 +5,7 @@ BUILD_DIR 	 := bin
 SRC_DIR 	 := src
 LEXER_FILE   := lexer.l
 PARSER_FILE  := parser.y
-LEXER_C_FILE := ${SRC_DIR}/lex.yy.c ${SRC_DIR}/y.tab.c ${SRC_DIR}/graph.c
+LEXER_C_FILE := ${SRC_DIR}/lex.yy.c ${SRC_DIR}/y.tab.c ${SRC_DIR}/graph.c ${SRC_DIR}/error.c
 RM_FILES     := ${SRC_DIR}/lex.yy.c ${SRC_DIR}/y.tab.c ${SRC_DIR}/y.tab.h
 
 LEXER_C_FILE_EXT := lex.yy.c y.tab.c

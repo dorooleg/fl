@@ -1,5 +1,7 @@
+
 read (x);
-if (y + 1 == x)
-then
+if (y + 1 == x) then
+begin
     write (y)
+end
 else (* nothing to do here *) begin skip; x := 5 end

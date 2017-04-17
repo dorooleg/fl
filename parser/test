@@ -1,0 +1,5 @@
+read (x); 
+while (0) do skip;
+if (y == z) then x := y + z else write (x);
+skip; 
+skip

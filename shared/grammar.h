@@ -214,15 +214,14 @@ public:
 		{
 			size_t sz = p.second.size();
 			for (size_t t = 0; t < sz; t++)
-				
-				{
+            {
 					auto& exp = p.second[t];
-					std::vector<std::shared_ptr<non_terminal>> cut;
+					std::vector<std::shared_ptr<token>> cut;
 					expression new_expr;
 					for (auto& e : exp)
 					{
 						if (std::find_if(eps.begin(), eps.end(), [&](const auto& x) { return x->get_value() == e->get_value(); }) != eps.end())
-							cut.push_back(std::make_shared<non_terminal>(e->get_value()));
+							cut.push_back(e);
 						else
 							new_expr.push_back(e);
 					}
@@ -241,10 +240,9 @@ public:
 							{
 								expression tmp = p.second[t];
 								
-								
 								tmp.erase(std::remove_if(tmp.begin(), tmp.end(), [&](auto& x) 
 								{
-									return std::find_if(ins_expr.begin(), ins_expr.end(), [&](const auto& h) { return h->get_value() == x->get_value(); }) == ins_expr.end();
+									return std::find_if(ins_expr.begin(), ins_expr.end(), [&](const auto& h) { return &(*h) == &(*x); }) == ins_expr.end();
 								}), tmp.end());
 
 								p.second.push_back(tmp);
@@ -253,8 +251,21 @@ public:
 					}
 				}
 		}
+
 		for (auto & p : expressions_)
 			p.second.erase(std::remove_if(p.second.begin(), p.second.end(), [](auto& x) { return x.size() > 0 && x[0]->get_value() == "'eps'"; }), p.second.end());
+        if (std::find_if(eps.begin(), eps.end(), [&](auto& x) { return x->get_value() == begin_.get_value(); }) != eps.end()) 
+        {
+            for (auto & p : expressions_)
+            {
+                if (p.first.get_value() == begin_.get_value())
+                {
+                    expression expression;
+                    expression.push_back(std::make_shared<terminal>("'eps'"));
+                    p.second.push_back(expression);
+                }
+            }
+        }
 	}
 
 	std::vector<std::shared_ptr<non_terminal>> get_eps_deducible()
@@ -432,7 +443,6 @@ public:
 	typedef std::map<std::string, std::vector<std::vector<bool>>> matrix_t;
 	matrix_t cyk(const std::string& w)
 	{
-        std::cout << w.size() << std::endl;
 		matrix_t map;
 
 		//base

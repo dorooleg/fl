@@ -1,6 +1,6 @@
 PROJECT_NAME := cnf
 CPP_COMPILER := clang++
-CPP_FLAGS 	 := -MMD -Werror -Wall -std=c++14 -O3 -Itests -Isrc
+CPP_FLAGS 	 := -MMD -Werror -Wall -std=c++14 -O3 -Itests -Isrc -I../shared
 BUILD_DIR 	 := bin
 SRC_DIR 	 := src
 TEST_DIR 	 := tests

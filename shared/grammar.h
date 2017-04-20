@@ -470,6 +470,110 @@ public:
 		return map;
 	}
 
+    struct node
+    {
+        std::string name;
+        size_t i = 0;
+        size_t j = 0;
+    };
+
+	typedef std::map<std::string, std::vector<std::vector<std::pair<std::vector<node>, bool>>>> dot_matrix_t;
+	dot_matrix_t dot_cyk(const std::string& w)
+	{
+		dot_matrix_t map;
+
+		//base
+		for (const auto& p : expressions_)
+		{
+			map[p.first.get_value()].resize(w.size());
+			for (size_t i = 0; i < w.size(); i++)
+				map[p.first.get_value()][i].resize(w.size());
+
+			for (size_t i = 0; i < w.size(); i++)
+            {
+                if (satisfy_terminal(p.second, w[i]))
+                {
+                    map[p.first.get_value()][i][i].second = true;
+                    map[p.first.get_value()][i][i].first.push_back({ std::string(1, w[i]), i, i});
+                }
+            }
+		}
+
+		for (size_t m = 0; m < w.size(); m++)
+			for (const auto& p : expressions_)
+				for (size_t j = 0; j < w.size(); j++)
+					for (size_t i = 0; i < w.size(); i++)
+					if (j - i == m)
+						for (size_t k = i; k < j; k++)
+							for (const auto& exp : p.second)
+							{
+								if (exp.only_terminals()) continue;
+                                if (map[exp[0]->get_value()][i][k].second
+                                    && map[exp[1]->get_value()][k + 1][j].second)
+                                {
+                                    map[p.first.get_value()][i][j].second = true; 
+                                    map[p.first.get_value()][i][j].first.push_back({ exp[0]->get_value(), i, k});
+                                    map[p.first.get_value()][i][j].first.push_back({ exp[1]->get_value(), k + 1, j });
+                                }
+							}
+		return map;
+	}
+
+    void cyk_dump_dot(const std::string& w, const std::string& path_to_file)
+    {
+        std::ofstream out(path_to_file);
+        auto m = dot_cyk(w);
+        std::string s = begin_.get_value();
+        out << "graph cyk {" << std::endl;
+        cyk_dump_dot({ s, 0, w.size() - 1 }, m, 0, out);
+        out << "}" << std::endl;
+        out.close();
+    }
+
+    void cyk_dump_dot(node nt, dot_matrix_t& m, size_t offset, std::ofstream& out)
+    {
+        if (m.find(nt.name) == m.end())
+            return;
+        if (!m[nt.name][nt.i][nt.j].second || m[nt.name][nt.i][nt.j].first.empty())
+            return;
+        for (const auto& node : m[nt.name][nt.i][nt.j].first)
+        {
+            out << "\"" << std::to_string(offset) << " "  << nt.name << "\"" << " -- " << "\"" << std::to_string(offset + 1) << " " << node.name << "\";" << std::endl;
+        }
+        for (const auto& node : m[nt.name][nt.i][nt.j].first)
+        {
+            cyk_dump_dot(node, m, offset + 1, out); 
+        }
+    }
+
+    bool cyk_result(const std::string& w)
+    {
+        auto m = cyk(w);
+        return m[begin_.get_value()][0][w.size() - 1];
+    }
+
+    void cyk_dump_csv(const std::string& w, const std::string& path_to_file)
+    {
+        std::ofstream out(path_to_file);
+        auto m = cyk(w);
+        for (size_t i = 0; i < w.size(); i++)
+        {
+            for (size_t j = 0; j < w.size(); j++)
+            {
+                for (auto & a : m)
+                {
+                    if (a.second[i][j])
+                        out << a.first << " ";
+                }
+                out << ", ";
+            }
+            out << std::endl;
+        }
+                
+        out.close();
+    }
+
+
 	bool satisfy_terminal(const std::vector<expression>& expressions, char c)
 	{
 		for (const auto& t : expressions)

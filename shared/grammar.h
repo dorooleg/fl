@@ -2,8 +2,10 @@
 #include "expression.h"
 #include "non_terminal.h"
 #include "terminal.h"
+#include "graph.h"
 #include <fstream>
 #include <tuple>
+#include <utility>
 #include <algorithm>
 #include <map>
 
@@ -519,6 +521,37 @@ public:
 		return map;
 	}
 
+private:
+    std::vector<non_terminal> find_no_terminal(const std::string& a, const std::string& b)
+    {
+        std::vector<non_terminal> non_terminals;
+        for (const auto& p : expressions_)
+            for (const auto& exp : p.second)
+            {
+                if (exp.only_terminals()) continue;
+                if (exp[0]->get_value() == a && exp[1]->get_value() == b)
+                {
+                    non_terminals.push_back(p.first);
+                    break;
+                }
+            }
+        return non_terminals;
+    }
+
+    std::vector<non_terminal> find_terminal(const std::string& t)
+    {
+        std::vector<non_terminal> non_terminals;
+		for (const auto& p : expressions_)
+		{
+            if (satisfy_terminal(p.second, t[0]))
+            {
+                non_terminals.push_back(p.first);
+            }
+		}
+        return non_terminals;
+    }
+
+public:
     void cyk_dump_dot(const std::string& w, const std::string& path_to_file)
     {
         std::ofstream out(path_to_file);
@@ -531,17 +564,70 @@ public:
         out.close();
     }
 
+    typedef std::vector<std::tuple<std::string, std::string, std::string>> vector_tuples;
+    vector_tuples analyze_graph(graph& graph)
+    {
+        std::vector<std::vector<std::vector<std::string>>> matrix(graph.size());
+        vector_tuples result;
+        for (size_t i = 0; i < graph.size(); i++)
+            matrix[i].resize(graph.size());
+        auto vg = graph.get_graph();
+        for (size_t i = 0; i < graph.size(); i++)
+            for (const auto& v : vg[i]) 
+            {
+                std::string rev;
+                rev += v.second;
+                auto t = find_terminal(rev);
+                for (auto & aba : t)
+                {
+                    matrix[i][v.first].push_back(aba.get_value());
+                    std::sort(matrix.at(i).at(v.first).begin(), matrix.at(i).at(v.first).end());
+                    matrix.at(i).at(v.first).erase(std::unique(matrix.at(i).at(v.first).begin(),
+                                                        matrix.at(i).at(v.first).end()),
+                                                        matrix.at(i).at(v.first).end()); 
+                }
+            }
+        
+        for (int y = 0; y < graph.size(); y++)
+            for (size_t i = 0; i < graph.size(); i++)
+                for (size_t j = 0; j < graph.size(); j++)
+                    for (size_t k = 0; k < graph.size(); k++)
+                    {
+                        if (k == i || k == j || i == j)
+                            continue;
+                        auto& v1 = matrix[i][k];
+                        auto& v2 = matrix[k][j];
+                        for (const auto& t1 : v1)
+                            for (const auto& t2 : v2)
+                            {
+                                auto values = find_no_terminal(t1, t2);
+                                for (auto & aba : values)
+                                {
+                                    matrix.at(i).at(j).push_back(aba.get_value());
+                                    std::sort(matrix.at(i).at(j).begin(), matrix.at(i).at(j).end());
+                                    matrix.at(i).at(j).erase(
+                                        std::unique(matrix.at(i).at(j).begin(),
+                                                    matrix.at(i).at(j).end()),
+                                                    matrix.at(i).at(j).end()); 
+                                }
+                            }
+                    }
+
+        for (size_t i = 0; i < graph.size(); i++)
+            for (size_t j = 0; j < graph.size(); j++)
+                for (const auto & v : matrix[i][j])
+                    if (i < j) 
+                        result.push_back(std::make_tuple(std::to_string(i), std::to_string(j), v));
+        return result;
+            
+    }
+
     void cyk_dump_dot(node nt, dot_matrix_t& m, size_t& offset, std::ofstream& out)
     {
         if (m.find(nt.name) == m.end())
             return;
         if (!m[nt.name][nt.i][nt.j].second || m[nt.name][nt.i][nt.j].first.empty())
             return;
-        /*
-        for (const auto& node : m[nt.name][nt.i][nt.j].first)
-        {
-        }
-        */
         size_t tmp_offset = offset;
         for (const auto& node : m[nt.name][nt.i][nt.j].first)
         {

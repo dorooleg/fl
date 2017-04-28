@@ -1,0 +1,8 @@
+S
+A = 'a' | 'c' | 'g' | 't'
+T = A A
+C = T | A T | T T
+B = 'a' C 'c' | 'c' C 'a' | 'g' C 't' | 't' C 'g'
+K = 'a' B 'c' | 'a' K 'c' | 'c' B 'a' | 'c' K 'a' | 'g' B 't' | 'g' K 't' | 't' B 'g' | 't' K 'g'
+P = 'a' K K K 'c' | 'c' K K K 'a' | 'g' K K K 't' | 't' K K K 'g'
+S = 'a' P 'c' | 'a' S 'c' | 'c' P 'a' | 'c' S 'a' | 'g' P 't' | 'g' S 't' | 't' P 'g' | 't' S 'g'

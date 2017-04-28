@@ -1,0 +1,6 @@
+A
+A = B B | C D
+B = B B | C D
+C = '('
+D = B E | ')'
+E = ')'

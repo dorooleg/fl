@@ -525,24 +525,30 @@ public:
         auto m = dot_cyk(w);
         std::string s = begin_.get_value();
         out << "graph cyk {" << std::endl;
-        cyk_dump_dot({ s, 0, w.size() - 1 }, m, 0, out);
+        size_t offset = 0;
+        cyk_dump_dot({ s, 0, w.size() - 1 }, m, offset, out);
         out << "}" << std::endl;
         out.close();
     }
 
-    void cyk_dump_dot(node nt, dot_matrix_t& m, size_t offset, std::ofstream& out)
+    void cyk_dump_dot(node nt, dot_matrix_t& m, size_t& offset, std::ofstream& out)
     {
         if (m.find(nt.name) == m.end())
             return;
         if (!m[nt.name][nt.i][nt.j].second || m[nt.name][nt.i][nt.j].first.empty())
             return;
+        /*
         for (const auto& node : m[nt.name][nt.i][nt.j].first)
         {
-            out << "\"" << std::to_string(offset) << " "  << nt.name << "\"" << " -- " << "\"" << std::to_string(offset + 1) << " " << node.name << "\";" << std::endl;
         }
+        */
+        size_t tmp_offset = offset;
         for (const auto& node : m[nt.name][nt.i][nt.j].first)
         {
-            cyk_dump_dot(node, m, offset + 1, out); 
+            offset++;
+            size_t c_offset = offset;
+            cyk_dump_dot(node, m, offset, out); 
+            out << "\"#" << std::to_string(tmp_offset) << " "  << nt.name << "\"" << " -- " << "\"#" << std::to_string(c_offset) << " " << node.name << "\";" << std::endl;
         }
     }
 

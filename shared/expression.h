@@ -4,140 +4,57 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <string>
+
 class expression
 {
 public:
 
 	typedef std::vector<std::shared_ptr<token>> container;
 
-	expression()
-	{
-	}
+	expression();
 
-	void push_back(const std::shared_ptr<token>& token)
-	{
-		tokens_.emplace_back(token);
-	}
+	void push_back(const std::shared_ptr<token>& token);
 
-	container::const_iterator begin() const
-	{
-		return tokens_.cbegin();
-	}
+	container::const_iterator begin() const;
 
-	container::const_iterator end() const
-	{
-		return tokens_.cend();
-	}
+	container::const_iterator end() const;
 
-	container::iterator begin()
-	{
-		return tokens_.begin();
-	}
+	container::iterator begin();
 
-	container::iterator end()
-	{
-		return tokens_.end();
-	}
+	container::iterator end();
 
-	size_t size() const
-	{
-		return tokens_.size();
-	}
+	size_t size() const;
 
-	std::shared_ptr<token>& operator[](size_t i)
-	{
-		return tokens_[i];
-	}
+	std::shared_ptr<token>& operator[](size_t i);
 
-	std::shared_ptr<token> operator[](size_t i) const
-	{
-		return tokens_[i];
-	}
+	std::shared_ptr<token> operator[](size_t i) const;
 
-	void clear()
-	{
-		tokens_.clear();
-	}
+	void clear();
 
-	void resize(size_t n)
-	{
-		tokens_.resize(n);
-	}
+	void resize(size_t n);
 
 	template<typename It1>
-	void erase(It1 a, It1 b)
-	{
-		tokens_.erase(a, b);
-	}
+	void erase(It1 a, It1 b);
 
-	bool only_non_terminals() const
-	{
-		for (const auto& v : tokens_)
-		{
-			if (v->is_terminal())
-			{
-				return false;
-			}
-		}
-		return true;
-	}
+	bool only_non_terminals() const;
 
-	bool only_terminals() const
-	{
-		for (const auto& v : tokens_)
-		{
-			if (!v->is_terminal())
-			{
-				return false;
-			}
-		}
-		return true;
-	}
+	bool only_terminals() const;
 
-	bool only_terminals(const std::vector<std::shared_ptr<token>>& tokens) const
-	{
-		for (const auto& v : tokens_)
-		{
-			if (!v->is_terminal() && std::find_if(tokens.begin(), tokens.end(), [&](const auto& x) { return v->get_value() == x->get_value(); }) == tokens.end())
-			{
-				return false;
-			}
-		}
-		return true;
-	}
+	bool only_terminals(const std::vector<std::shared_ptr<token>>& tokens) const;
 
-	bool is_epsilon(const std::vector<std::shared_ptr<non_terminal>>& vec) const
-	{
-		for (const auto& v : tokens_)
-		{
-			if (v->is_terminal() || std::find_if(vec.begin(), vec.end(), [&](const auto& x) { return v->get_value() == x->get_value(); }) == vec.end())
-			{
-				return false;
-			}
-		}
-		return true;
-	}
+	bool is_epsilon(const std::vector<std::shared_ptr<non_terminal>>& vec) const;
 
-	size_t count_terminals() const
-	{
-		size_t count = 0;
-		for (const auto& v : tokens_)
-		{
-			count += v->is_terminal();
-		}
-		return count;
-	}
+	size_t count_terminals() const;
 
-	friend std::ostream& operator<<(std::ostream& os, const expression& expr)
-	{
-		for (auto & v : expr)
-		{
-			os << " " << *v;
-		}
-		return os;
-	}
+	friend std::ostream& operator<<(std::ostream& os, const expression& expr);
 
 private:
 	container tokens_;
 };
 
+template<typename It1>
+void expression::erase(It1 a, It1 b)
+{
+    tokens_.erase(a, b);
+}

@@ -22,7 +22,7 @@ std::string & rtrim(std::string & str)
 int main(int argc, char **argv)
 {
 	using namespace std;
-    if (argc != 3)
+    if (argc > 3 || argc < 2)
     {
         std::cerr << "Invalid count arguments" << std::endl;
         return EXIT_FAILURE;
@@ -30,16 +30,26 @@ int main(int argc, char **argv)
 	grammar grammar;
 	grammar.load_file(argv[1]);
 	grammar.to_cnf();
+    grammar.optimize_grammar();
 
     graph graph; 
-    graph.load_file(argv[2]);
-//    graph.generate_graph();
+    if (argc == 2)
+    {
+        graph.generate_graph();
+    }
+    else
+    {
+        graph.load_file(argv[2]);
+    }
     std::cout << grammar << std::endl;
     std::cout << graph << std::endl;
 
+    std::cout << "Begin analyze" << std::endl;
     grammar::vector_tuples analyze = grammar.analyze_graph(graph);
     for (const auto& t : analyze)
         std::cout << "(" << std::get<0>(t) << ", " << std::get<1>(t) << ", " << std::get<2>(t) << ")" << std::endl; 
+
+    std::cout << "End analyze" << std::endl;
 
 	return 0;
 }

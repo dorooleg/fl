@@ -18,7 +18,7 @@ mkdir:
 	mkdir -p bin
 
 clean:
-	rm -- ${BUILD_DIR}/*.o ${BUILD_DIR}/*.d ${BUILD_DIR}/${PROJECT_NAME}
+	rm -r -- ${BUILD_DIR}
 
 ${BUILD_DIR}/${PROJECT_NAME}: ${OBJ_FILES}
 	${CPP_COMPILER} ${CPP_FLAGS} -o $@ $^ 

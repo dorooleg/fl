@@ -4,6 +4,7 @@
 #include <streambuf>
 #include "grammar.h"
 #include "graph.h"
+#include "graph_analyzer.h"
 
 std::string & ltrim(std::string & str)
 {
@@ -45,7 +46,7 @@ int main(int argc, char **argv)
     std::cout << graph << std::endl;
 
     std::cout << "Begin analyze" << std::endl;
-    grammar::vector_tuples analyze = grammar.analyze_graph(graph);
+    vector_tuples analyze = analyze_graph(grammar, graph);
     for (const auto& t : analyze)
         std::cout << "(" << std::get<0>(t) << ", " << std::get<1>(t) << ", " << std::get<2>(t) << ")" << std::endl; 
 

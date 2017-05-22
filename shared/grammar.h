@@ -53,15 +53,12 @@ public:
 	typedef std::map<std::string, std::vector<std::vector<std::pair<std::vector<node>, bool>>>> dot_matrix_t;
 	dot_matrix_t dot_cyk(const std::string& w);
 
-private:
+public:
     std::vector<non_terminal>& find_no_terminal(const std::string& a, const std::string& b);
     std::vector<non_terminal> find_terminal(const std::string& t);
 
 public:
     void cyk_dump_dot(const std::string& w, const std::string& path_to_file);
-
-    typedef std::vector<std::tuple<std::string, std::string, std::string>> vector_tuples;
-    vector_tuples analyze_graph(graph& graph);
 
     void cyk_dump_dot(node nt, dot_matrix_t& m, size_t& offset, std::ofstream& out);
 
@@ -83,6 +80,7 @@ private:
 
 	friend std::ostream& operator<<(std::ostream& os, const grammar& gram);
 
+private:
     void grammar_init_hash();
 
 private:
